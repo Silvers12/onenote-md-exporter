@@ -15,7 +15,7 @@ namespace alxnbl.OneNoteMdExporter.Models
     /// </summary>
     public class TemporaryNotebook : Notebook
     {
-        public static new string Title { get; } = "TempExporterNotebook";
+        public static new string Title { get; } = "__TempExporterNotebook__";
 
         private static new string OneNoteId { get; set; }
 
@@ -79,7 +79,7 @@ namespace alxnbl.OneNoteMdExporter.Models
             if (OneNoteId != null)
             {
                 OneNoteApp.Instance.CloseNotebook(OneNoteId, true);
-                FileSystem.DeleteDirectory(OneNotePath, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
+                FileSystem.DeleteDirectory(OneNotePath, UIOption.OnlyErrorDialogs, RecycleOption.DeletePermanently);
                 
                 OneNoteId = null;
             }

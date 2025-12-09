@@ -268,7 +268,9 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
 
         /// <summary>
         /// Pre-process OneNote XML page for: Sections unfold, Convert OneNote tags to #hash-tags, Keep checkboxes, etc.
-        /// If page XML content was changed due pre-processing, the new content stored at temporary notebook
+        //  To avoid any modification on OneNote original page, if page XML content was changed due pre-processing 
+        //  the modified page is stored in a temporary notebook that will be used to export page in replacement to the original page
+        // /!\ Copy a page in the temporary notebook is resource intensive and should be avoided when possible /!\
         /// </summary>
         /// <param name="xmlPageContent">Page to pre-process</param>
         /// <returns>Temporary OneNote ID of changed pre-processed page or NULL if pre-processing do not changed page XML</returns>
@@ -304,14 +306,13 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
 
             /// Convert hash valued colors to yellow
             if (AppSettings.convertHexValueHighlightingToYellow)
-                convertHexValueHighlightingToYellow(xmlPageContent, ns);
-
-            /// Keep HTML highlighting (using span elements). Notesnook can handle this!
-            if (AppSettings.UseHtmlStyling)
             {
-                // Capture font styling in span elements inside text elements
-                CaptureFontStyling(xmlPageContent, ns);
-                // Escape HTML span elements with style attributes, or highlighting will be removed by Pandoc
+                convertHexValueHighlightingToYellow(xmlPageContent, ns);
+            }
+
+            if (AppSettings.UseHtmlStyling) /// Keep HTML highlighting (using span elements)
+            {
+                // Escape HTML span elements for style attributes not handled by pandoc / not supported by markdown
                 EscapeStylingSpan(xmlPageContent, ns);
             }
 
@@ -321,9 +322,19 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
                 return null;
         }
 
+        /// <summary>
+        /// Escape html tag not translated in markdown by PanDoc and that should be 
+        /// included in markdown output
+        /// </summary>
+        /// <param name="xmlPageContent"></param>
+        /// <param name="ns"></param>
         private static void EscapeStylingSpan(XElement xmlPageContent, XNamespace ns)
         {
-            var highlightRegex = new Regex(@"<span\s+style='(\s*[a-zA-Z0-9\s\.\#;:-]*)'>(.*?)<\/span>");
+            var styleRegexSearchStr = @"\s*[a-zA-Z0-9\s\.\#;:-]*((?:color|background)[^']*)";
+            var styleRegexReplaceStr = @"\s*([^']*)";
+
+            var htmlRegex = new Regex(@"<span\s+style='" + styleRegexSearchStr + @"'>(.*?)<\/span>");
+            var styleRegex = new Regex(styleRegexSearchStr);
             foreach (var xmlText in xmlPageContent.Descendants(ns + "T"))
             {
                 if (xmlText.FirstNode is not XCData cdataNode)
@@ -333,36 +344,27 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
                     continue;
                 }
                 XCData innerNode = xmlText.FirstNode as XCData;
+                var styleAttribute = xmlText.Attribute("style") ?? xmlText.Parent?.Attribute("style");
 
-                innerNode.Value = highlightRegex.Replace(innerNode.Value, match =>
+                // Case 1 - Style attribute is defined in a span html tag => Escape span tag
+                if (htmlRegex.IsMatch(innerNode.Value))
                 {
-                    return $"«span style='{match.Groups[1]}'»{match.Groups[2]}«/span»";
-                });
-            }
-        }
 
-        private static void CaptureFontStyling(XElement xmlPageContent, XNamespace ns)
-        {
-            foreach (var textElement in xmlPageContent.Descendants(ns + "T"))
-            {
-                // Capture CDATA element
-                if (textElement.FirstNode is not XCData cdataNode)
-                {
-                    // Only log if the tag is one we expect to handle
-                    Log.Warning($"Found T-element but no CDATA-element, with Value: '{textElement?.Value}'");
-                    continue;
+                    var htmlRegexReplace = new Regex(@"<span\s+style='" + styleRegexReplaceStr + @"'>(.*?)<\/span>");
+
+                    innerNode.Value = htmlRegexReplace.Replace(innerNode.Value, match =>
+                    {
+                        return $"«span style='{match.Groups[1]}'»{match.Groups[2]}«/span»";
+                    });
                 }
-                XCData innerNode = textElement.FirstNode as XCData;
-
-                // This is kindoff cheating, but the code is much simpler:
-                //  In the case of bold/italic/underline text, the text is already inside a <span> element.
-                //  However the text element itself in those cases also has a style attribute (which is basically redundant)
-                //  This will capture that as well and so will put the inner span with styling, in anouther span-element with styling.
-                //  However, because the escaping only captures the inner span-element, we end up with the same situation
-                //      as before: just span element inside the text element.
-                var styleAttribute = textElement.Attribute("style") ?? textElement.Parent?.Attribute("style");
-                if (styleAttribute is not null)
-                    innerNode.Value = $"<span style='{styleAttribute.Value}'>{textElement.Value}</span>";
+                // Case 2 - Style attribute is defined in the parent html tag => Add span tag 
+                else if (styleRegex.IsMatch(styleAttribute?.Value ?? ""))
+                {
+                    innerNode.Value = styleRegex.Replace(styleAttribute?.Value ?? "", match =>
+                    {
+                        return $"«span style='{match.Groups[1]}'»{innerNode.Value}«/span»";
+                    });
+                }
             }
         }
 
@@ -462,7 +464,7 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
 
         private Dictionary<string, OneNoteTagDefEnum> GetTagDefDict(XElement xmlPageContent, XNamespace ns) {
             // Get all tag definitions from the page content
-            Dictionary<string, OneNoteTagDefEnum> tags = new Dictionary<string, OneNoteTagDefEnum>();
+            Dictionary<string, OneNoteTagDefEnum> tags = [];
 
             foreach (var tagDef in xmlPageContent.Descendants(ns + "TagDef"))
             {
@@ -534,12 +536,12 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
                     customTag = CustomTagStar;
                 else if (tagType == OneNoteTagDefEnum.Question)
                     customTag = CustomTagQuestion;
-                else if (tagType == OneNoteTagDefEnum.RemindMeLater)
+                else if (tagType == OneNoteTagDefEnum.RemindMeLater && AppSettings.UseHtmlStyling)
                 {
                     customTag = CustomTagRemember;
                     highlightEndTag = "</span>";
                 }
-                else if (tagType == OneNoteTagDefEnum.Definition)
+                else if (tagType == OneNoteTagDefEnum.Definition && AppSettings.UseHtmlStyling)
                 {
                     customTag = CustomTagDefinition;
                     highlightEndTag = "</span>";
