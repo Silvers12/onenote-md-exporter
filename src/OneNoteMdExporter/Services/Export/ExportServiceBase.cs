@@ -481,7 +481,7 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
             var tagsDef = GetTagDefDict(xmlPageContent, ns);
 
             // Find occurances and replace
-            foreach (var tagElement in xmlPageContent.Descendants(ns + "Tag").OrderBy(e => e.))
+            foreach (var tagElement in xmlPageContent.Descendants(ns + "Tag"))
             {
                 // Get the corresponding text element
                 XElement textElement = tagElement.Parent.Descendants(ns + "T").First() as XElement;
@@ -502,7 +502,9 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
                 // Add custom tag right before the tasks inner content
                 XCData innerNode = textElement.FirstNode as XCData;
                 var endtag = customTag == "==" ? "==" : "";
-                innerNode.Value = $"{customTag}{innerNode.Value}{endtag}";
+
+                innerNode.Value = $"{customTag} {innerNode.Value}{endtag}";
+                if (!innerNode.Value.EndsWith("\n&nbsp;\n")) innerNode.Value += "\n&nbsp;\n";
             }
         }
 

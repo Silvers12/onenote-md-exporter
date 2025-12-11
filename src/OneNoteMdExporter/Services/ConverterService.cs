@@ -160,8 +160,16 @@ namespace alxnbl.OneNoteMdExporter.Services
                 mdFileContent = UnEscapeStylingSpan(mdFileContent);
 
             mdFileContent = InsertMdHighlight(mdFileContent);
-            
+
             mdFileContent = ConvertOneNoteLinks(mdFileContent);
+
+            mdFileContent = InsertMdTodoMarks(mdFileContent);
+        }
+
+        private static string InsertMdTodoMarks(string mdFileContent)
+        {
+            return mdFileContent.Replace("«☐»", "- [ ] ").Replace("«☑»", "- [x] ");
+           
         }
 
         private static string RemoveOneNoteHeader(string pageTxt)
