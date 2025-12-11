@@ -105,11 +105,6 @@ namespace alxnbl.OneNoteMdExporter.Infrastructure
         public static bool MaxTwoLineBreaksInARow { get; set; } = true;
 
         /// <summary>
-        /// Convert all OneNote highlighting using hex valued colors, to yellow.
-        /// </summary>
-        public static bool convertHexValueHighlightingToYellow { get; set; } = false;
-
-        /// <summary>
         /// Capture HTML styling in span-elements and "escape" it, so it is preserved during translation.
         /// This is useful for editors like TipTap/Notesnook that can handle HTML.
         /// NB: This means highlighting is not translated into markdown highlighting using '=='.

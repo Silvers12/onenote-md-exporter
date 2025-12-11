@@ -304,12 +304,6 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
             /// Add horizontal bar before text blocks
             AddHorizontalBarBeforeTextblocks(xmlPageContent, ns);
 
-            /// Convert hash valued colors to yellow
-            if (AppSettings.convertHexValueHighlightingToYellow)
-            {
-                convertHexValueHighlightingToYellow(xmlPageContent, ns);
-            }
-
             if (AppSettings.UseHtmlStyling) /// Keep HTML highlighting (using span elements)
             {
                 // Escape HTML span elements for style attributes not handled by pandoc / not supported by markdown
@@ -354,7 +348,8 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
 
                     innerNode.Value = htmlRegexReplace.Replace(innerNode.Value, match =>
                     {
-                        return $"«span style='{match.Groups[1]}'»{match.Groups[2]}«/span»";
+                        // Remove \n in style tag to prevent PanDoc to replace them by <BR /> tags
+                        return $"«span style='{match.Groups[1].ToString().Replace('\n', ' ')}'»{match.Groups[2]}«/span»";
                     });
                 }
                 // Case 2 - Style attribute is defined in the parent html tag => Add span tag 
@@ -362,25 +357,13 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
                 {
                     innerNode.Value = styleRegex.Replace(styleAttribute?.Value ?? "", match =>
                     {
-                        return $"«span style='{match.Groups[1]}'»{innerNode.Value}«/span»";
+                        // Remove \n in style tag to prevent PanDoc to replace them by <BR /> tags
+                        return $"«span style='{match.Groups[1].ToString().Replace('\n', ' ') }'»{innerNode.Value}«/span»";
                     });
                 }
             }
         }
 
-        private static void convertHexValueHighlightingToYellow(XElement xmlPageContent, XNamespace ns)
-        {
-            // Fix for non-standard text highlights:
-            // Replace OneNote CDATA HTML tags <span style="background:#SOME_HEX_VAL"> by <span style="background:yellow">
-            var highlightRegex = new Regex(@"(<span\s+style='[^']*?background)\s*:\s*#\w+");
-            foreach (var xmlText in xmlPageContent.Descendants(ns + "T"))
-            {
-                xmlText.Value = highlightRegex.Replace(xmlText.Value, match =>
-                {
-                    return $"{match.Groups[1]}:yellow";
-                });
-            }
-        }
 
         private static readonly string HorizontalBar = "---" + Environment.NewLine + Environment.NewLine;
         private void AddHorizontalBarBeforeTextblocks(XElement xmlPageContent, XNamespace ns)
@@ -462,36 +445,28 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
             return span.ToString();
         }
 
-        private Dictionary<string, OneNoteTagDefEnum> GetTagDefDict(XElement xmlPageContent, XNamespace ns) {
+        private Dictionary<string, string[]> GetTagDefDict(XElement xmlPageContent, XNamespace ns) {
             // Get all tag definitions from the page content
-            Dictionary<string, OneNoteTagDefEnum> tags = [];
+            Dictionary<string, string[]> tags = [];
 
             foreach (var tagDef in xmlPageContent.Descendants(ns + "TagDef"))
             {
-                if (string.IsNullOrEmpty(tagDef.Attribute("name")?.Value))
-                    continue;
+                if (!string.IsNullOrEmpty(tagDef.Attribute("symbol")?.Value) && !string.IsNullOrEmpty(tagDef.Attribute("index")?.Value))
+                {
+                    if(TagsDefMap.Map.TryGetValue(tagDef.Attribute("symbol")?.Value, out var value))
+                    {
+                        tags[tagDef.Attribute("index")?.Value] = value;
+                    }
+                    else
+                    {
+                        Log.Debug("GetTagDefDict: tag symbol " + tagDef.Attribute("symbol")?.Value + " ("+ tagDef.Attribute("name")?.Value + ") not found");
+                    }
 
-                var index = tagDef.Attribute("index")?.Value;
-                var type = tagDef.Attribute("type")?.Value;
-                var symbol = tagDef.Attribute("symbol")?.Value;
-                var highlightColor = tagDef.Attribute("highlightColor")?.Value;
-                var name = tagDef.Attribute("name")?.Value;
-                
-                // Determine tag type based on certainty of attributes
-                if (type == "0" || symbol == "3" || name == "To Do" || name == "Taak" || name == "Takenlijst" || type == "99")
-                    tags.Add(index, OneNoteTagDefEnum.Task);
-                else if (type == "1" || symbol == "13" || name == "Important" || name == "Belangrijk" || type ==  "115")
-                    tags.Add(index, OneNoteTagDefEnum.Important);
-                else if (type == "2" || symbol == "15" || name == "Question" || name == "Vraag")
-                    tags.Add(index, OneNoteTagDefEnum.Question);
-                else if (type == "3" || name == "Remember for later" || highlightColor == "#FFFF00")
-                    tags.Add(index, OneNoteTagDefEnum.RemindMeLater);
-                else if (type == "4" || name == "Definition" || name == "Definitie" || type == "119" || highlightColor == "#00FF00")
-                    tags.Add(index, OneNoteTagDefEnum.Definition);
+                }
             }
-
             return tags;
         }
+
 
 
         /// <summary>
@@ -501,15 +476,9 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
         /// </summary>
         /// <param name="xmlPageContent"></param>
         /// <param name="ns"></param>
-        const string CustomTagUnchecked = "🔲 ";
-        const string CustomTagChecked = "✅ ";
-        const string CustomTagStar = "⭐ ";
-        const string CustomTagQuestion = "❓ ";
-        const string CustomTagRemember = "<span style='background:yellow;mso-highlight:yellow'>";
-        const string CustomTagDefinition = "<span style='background:green;mso-highlight:green'>";
         private void ConvertOnenoteTags(XElement xmlPageContent, XNamespace ns)
         {
-            var tags = GetTagDefDict(xmlPageContent, ns);
+            var tagsDef = GetTagDefDict(xmlPageContent, ns);
 
             // Find occurances and replace
             foreach (var tagElement in xmlPageContent.Descendants(ns + "Tag"))
@@ -523,35 +492,19 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
                 }
 
                 var tagIndex = tagElement.Attribute("index")?.Value;
-                if (!tags.ContainsKey(tagIndex))
+                if (!tagsDef.ContainsKey(tagIndex))
                     continue;
-                                
+
                 // Determine which custom tag to use
-                var tagType = tags[tagIndex];
-                string customTag;
-                string highlightEndTag = "";
-                if (tagType == OneNoteTagDefEnum.Task)
-                    customTag = (tagElement.Attribute("completed")?.Value == "false") ? CustomTagUnchecked : CustomTagChecked;
-                else if (tagType == OneNoteTagDefEnum.Important)
-                    customTag = CustomTagStar;
-                else if (tagType == OneNoteTagDefEnum.Question)
-                    customTag = CustomTagQuestion;
-                else if (tagType == OneNoteTagDefEnum.RemindMeLater && AppSettings.UseHtmlStyling)
-                {
-                    customTag = CustomTagRemember;
-                    highlightEndTag = "</span>";
-                }
-                else if (tagType == OneNoteTagDefEnum.Definition && AppSettings.UseHtmlStyling)
-                {
-                    customTag = CustomTagDefinition;
-                    highlightEndTag = "</span>";
-                }
-                else
-                    continue; // Skip other tags
+                var customTagSymbols = tagsDef[tagElement.Attribute("index")?.Value];
+                string customTag = customTagSymbols.Length > 1 && tagElement.Attribute("completed")?.Value == "true" ? customTagSymbols[1] : customTagSymbols[0];
 
                 // Add custom tag right before the tasks inner content
                 XCData innerNode = textElement.FirstNode as XCData;
-                innerNode.Value = $"{customTag}{innerNode.Value}{highlightEndTag}";
+                var endtag = customTag == "==" ? "==" : "";
+
+                innerNode.Value = $"{customTag} {innerNode.Value}{endtag}";
+                if (!innerNode.Value.EndsWith("\n&nbsp;\n")) innerNode.Value += "\n&nbsp;\n";
             }
         }
 
