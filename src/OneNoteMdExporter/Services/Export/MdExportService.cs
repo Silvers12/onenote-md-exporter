@@ -141,6 +141,24 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
             return res;
         }
 
+        protected override string GetPageWikilink(string linkText, string mdFilePath, string pageId)
+        {
+            var normalizedPath = mdFilePath.Replace('\\', '/');
+
+            if (AppSettings.OneNoteLinksHandling == OneNoteLinksHandlingEnum.ConvertToWikilink)
+            {
+                // For Wikilinks, we use the format [[MdFilePath]] or [[MdFilePath|Display Text]]
+                return normalizedPath == linkText ?
+                    $"[[{normalizedPath}]]" :
+                    $"[[{normalizedPath}|{linkText}]]";
+            }
+            else // ConvertToMarkdown
+            {
+                normalizedPath = normalizedPath.Replace(" ", "%20");
+                return $"[{linkText}]({normalizedPath}.md)";
+            }
+        }
+
         private static string AddFrontMatterHeader(Page page, string pageMd)
         {
             var headerModel = new FrontMatterHeader

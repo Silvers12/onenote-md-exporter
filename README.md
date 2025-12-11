@@ -72,7 +72,7 @@ Command line is supported, run `OneNoteMdExporter.exe --help` for instructions.
 | Hierarchy of sections | ✅ Folder hierarchy | ✅ Notebook hierarchy |
 | Page ordering inside a section | 🔴 Ordering based on md filename | ✅ Order preserved |
 | Page hierarchy | ✅ Page prefix or folder prefix | ✅ |
-| Notebook internal link (onenote://) | ✅ Links to pages (no links to section, anchors, other notebooks) | 🔴 Not tested
+| Notebook internal link (onenote://) | ✅ Links to page of the same notebook only | ✅ Links to page of the same notebook only
 
 ___
 ___
@@ -83,14 +83,15 @@ ___
 | Image  | ✅ |
 | Table  | ✅ |
 | Folded paragraphs | ✅ |
-| Image nexted into table | 🔴 Known issue [#48](https://github.com/alxnbl/onenote-md-exporter/issues/48) |
-| Font color| 🔴 Html SPAN tag |
-| Background color  | 🔴 Html or == MD  |
+| Image nested into table | 🔴 Known issue [#48](https://github.com/alxnbl/onenote-md-exporter/issues/48) |
+| Font color| ✅ HTML support required* |
+| Background color  | ✅ HTML support required*  |
 | Drawing | 🟠 Flattened as image | 
 | Handwriting  | 🔴 Lost |
 | Text tags (task, star...)  | ✅ Converted into emoticons |
-| Password protected sections | 🟠 Lost unless unlocked before export |
+| Password protected section | 🟠 Lost unless unlocked before export |
 
+\* Support of the feature requires a mardown editor that supports HTML (like Joplin and Obsidian)
 
 # Technical characteristics
 
