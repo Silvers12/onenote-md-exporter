@@ -14,9 +14,8 @@ version 2 or later:
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+   You should have received a copy of the GNU General Public License along
+   with this program; if not, see <https://www.gnu.org/licenses/>.
 
 The GNU General Public License is available in the file COPYING.md in
 the source distribution.  On Debian systems, the complete text of the
@@ -24,9 +23,9 @@ GPL can be found in `/usr/share/common-licenses/GPL`.
 
 [GPL]: https://www.gnu.org/copyleft/gpl.html
 
-Pandoc's complete source code is available from the [Pandoc home page].
-
-[Pandoc home page]: https://pandoc.org
+The complete source code for pandoc version X.Y.Z is available at
+<https://hackage.haskell.org/package/pandoc-X.Y.Z/pandoc-X.Y.Z.tar.gz>
+and at <https://github.com/jgm/pandoc/tree/X.Y.Z>.
 
 Pandoc includes some code with different copyrights, or subject to different
 licenses.  The copyright and license statements for these sources are included
@@ -177,7 +176,7 @@ Released under the Do What the Fuck You Want To Public License.
 ------------------------------------------------------------------------
 Pandoc embeds a Lua interpreter (via hslua).
 
-Copyright © 1994–2022 Lua.org, PUC-Rio.
+Copyright © 1994--2023 Lua.org, PUC-Rio.
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
