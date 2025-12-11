@@ -304,12 +304,6 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
             /// Add horizontal bar before text blocks
             AddHorizontalBarBeforeTextblocks(xmlPageContent, ns);
 
-            /// Convert hash valued colors to yellow
-            if (AppSettings.convertHexValueHighlightingToYellow)
-            {
-                convertHexValueHighlightingToYellow(xmlPageContent, ns);
-            }
-
             if (AppSettings.UseHtmlStyling) /// Keep HTML highlighting (using span elements)
             {
                 // Escape HTML span elements for style attributes not handled by pandoc / not supported by markdown
@@ -370,19 +364,6 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
             }
         }
 
-        private static void convertHexValueHighlightingToYellow(XElement xmlPageContent, XNamespace ns)
-        {
-            // Fix for non-standard text highlights:
-            // Replace OneNote CDATA HTML tags <span style="background:#SOME_HEX_VAL"> by <span style="background:yellow">
-            var highlightRegex = new Regex(@"(<span\s+style='[^']*?background)\s*:\s*#\w+");
-            foreach (var xmlText in xmlPageContent.Descendants(ns + "T"))
-            {
-                xmlText.Value = highlightRegex.Replace(xmlText.Value, match =>
-                {
-                    return $"{match.Groups[1]}:yellow";
-                });
-            }
-        }
 
         private static readonly string HorizontalBar = "---" + Environment.NewLine + Environment.NewLine;
         private void AddHorizontalBarBeforeTextblocks(XElement xmlPageContent, XNamespace ns)
