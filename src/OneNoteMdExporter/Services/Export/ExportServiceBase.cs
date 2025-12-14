@@ -302,6 +302,7 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
 
             var htmlRegex = new Regex(@"<span\s+style='" + styleRegexSearchStr + @"'>(.*?)<\/span>");
             var styleRegex = new Regex(styleRegexSearchStr);
+
             foreach (var xmlText in xmlPageContent.Descendants(ns + "T"))
             {
                 if (xmlText.FirstNode is not XCData cdataNode)
@@ -328,11 +329,13 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
                 // Case 2 - Style attribute is defined in the parent html tag => Add span tag 
                 else if (styleRegex.IsMatch(styleAttribute?.Value ?? ""))
                 {
-                    innerNode.Value = styleRegex.Replace(styleAttribute?.Value ?? "", match =>
+                    var match = styleRegex.Match(styleAttribute?.Value ?? "");
+                    if (match.Success)
                     {
                         // Remove \n in style tag to prevent PanDoc to replace them by <BR /> tags
-                        return $"«span style='{match.Groups[1].ToString().Replace('\n', ' ') }'»{innerNode.Value}«/span»";
-                    });
+                        var newValue = $"«span style='{match.Groups[1].ToString().Replace('\n', ' ') }'»{innerNode.Value}«/span»";
+                        innerNode.Value = newValue;
+                    };
                 }
             }
         }
@@ -584,15 +587,13 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
         /// <param name="resourceFolderPath">The path to the notebook folder where store attachments</param>
         public void ExtractImagesToResourceFolder(Page page, ref string mdFileContent)
         {
-            // Replace <IMG> tags by markdown references
-            var pageTxtModified = Regex.Replace(mdFileContent, "<img [^>]+/>", delegate (Match match)
+            
+            string processImgTag(string tag, bool outputHtmlTag)
             {
-                string imageTag = match.ToString();
-
                 // http://regexstorm.net/tester
                 string regexImgAttributes = "<img src=\"(?<src>[^\"]+)\".* />";
 
-                MatchCollection matches = Regex.Matches(imageTag, regexImgAttributes, RegexOptions.IgnoreCase);
+                MatchCollection matches = Regex.Matches(tag, regexImgAttributes, RegexOptions.IgnoreCase);
                 Match imgMatch = matches[0];
 
                 var panDocHtmlImgTagPath = Path.GetFullPath(imgMatch.Groups["src"].Value);
@@ -617,8 +618,29 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
 
                 var attachRef = GetAttachmentMdReference(imgAttach);
                 var refLabel = Path.GetFileNameWithoutExtension(imgAttach.ActualSourceFilePath);
-                return $"![{refLabel}]({attachRef})";
 
+                if (outputHtmlTag)
+                    return $"<img src=\"{attachRef}\" alt=\"{refLabel}\" />";
+                else
+                    return $"![{refLabel}]({attachRef})";
+            }
+
+            // Match <IMG> tags and any html cell tags arround
+            string pattern = @"(?<cellTagStart><(?:td|th)\b[^>]*>(?:(?!<\/(?:td|th)>)[\s\S])*?)?(?<imgTag><img\b[^>]*>)(?<cellTagEnd>(?:(?!<\/(?:td|th)>)[\s\S])*?<\/(?:td|th)>)?";
+
+            var pageTxtModified = Regex.Replace(mdFileContent, pattern, delegate (Match match)
+            {
+                string imageTag = match.ToString();
+
+                Group cellTagStart = match.Groups["cellTagStart"];
+                Group imgTag = match.Groups["imgTag"];
+                Group cellTagEnd = match.Groups["cellTagEnd"];
+
+                var imgNestedInHtmlTable = cellTagStart.Success || cellTagEnd.Success;
+
+                var newImg = processImgTag(imageTag, imgNestedInHtmlTable);
+
+                return $"{cellTagStart.Value}{newImg}{cellTagEnd.Value}";
             });
 
 
