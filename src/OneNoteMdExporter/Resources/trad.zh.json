@@ -26,6 +26,5 @@
   "YesAnswer": "yes",
   "FoundXSections": "--> 找到 {0} 个章节\n",
   "FoundXSectionsAndSecGrp": "--> 在章节组中找到 {0} 个章节\n",
-  "StartProcessingSectionX": "开始导出章节",
   "Page": "页面"
 }

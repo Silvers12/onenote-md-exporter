@@ -89,13 +89,14 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
             }
 
             // Phase 2: Export content and convert to markdown
-            Log.Information(Localizer.GetString("NotebookProcessingStartingPhase2"));
+            Log.Information("\n" + Localizer.GetString("NotebookProcessingStartingPhase2"));
 
             // First export all sections (including section groups)
             int cmptSect = 0;
             foreach (Section section in sections)
             {
-                Log.Information($"{Localizer.GetString("StartProcessingSectionX")} ({++cmptSect}/{sections.Count}) :  {section.GetPath(AppSettings.MdMaxFileLength)}\\{section.Title}");
+                Log.Information($"- {Localizer.GetString("Section")} ({++cmptSect}/{sections.Count}) :  {section.GetPath(AppSettings.MdMaxFileLength)}\\{section.Title}");
+
                 WriteSectionNodeMdFile(section);
             }
 
@@ -107,8 +108,8 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
                 {
                     MovePageHierarchyInADedicatedNotebook(page);
                 }
+                Log.Information($"- {Localizer.GetString("Page")} {++cmptPage}/{allPages.Count} : {page.Parent.Title} / {page.TitleWithPageLevelTabulation}");
 
-                Log.Information($"   {Localizer.GetString("Page")} {++cmptPage}/{allPages.Count} : {page.TitleWithPageLevelTabulation}");
                 var success = ExportPage(page);
 
                 if (!success) result.PagesOnError++;

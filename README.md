@@ -93,12 +93,22 @@ ___
 
 \* Support of the feature requires a mardown editor that supports HTML (like Joplin and Obsidian)
 
+# FAQ
+
+* An error `Unhandled exception. System.Runtime.InteropServices.COMException` occurs after starting the tool 
+  * This error in usually caused by a problem specific to your computer installation. Consider :
+  * Uninstall and reinstall Office
+  * Export notebook from an other computer : [export your notebook](/doc/notebook-onepkg-export.md), import it on an other computer and run OneNoteMdExporter
+
+* Some of my images are lost / broken during the export
+  * Try to enable the option `Download all files and images` from `File -> Options -> Sync`. Force synchronisation of your notebook and try again the export.
+
 # Technical characteristics
 
-* DotNet 8 self-contained console application
+* DotNet 10 self-contained console application
 * Export page as DocX and translate them in Markdown using PanDoc
-* Offline : no call to Microsoft cloud
-* Based on Office Interop APIs
+* Offline : no dependency to Microsoft cloud
+* Rely on OneNote and Word apps (based on Interop APIs)
 * Pre-processing stage of OneNote page XML structure
 * Post-processing stage based on Regex to fix formatting issues
 

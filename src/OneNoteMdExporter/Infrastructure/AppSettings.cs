@@ -117,6 +117,11 @@ namespace alxnbl.OneNoteMdExporter.Infrastructure
         public static OneNoteLinksHandlingEnum OneNoteLinksHandling { get; set; } = OneNoteLinksHandlingEnum.ConvertToMarkdown;
 
 
+        /// <summary>
+        /// ADVANCED SETTING : Disable transformation based on OneNote XML preprocessing (paraph unfold, background and font-color,...)
+        /// </summary>
+        public static bool DisablePageXmlPreProcessing { get; set; } = false;
+
         /*
          * Developer Settings
          * */

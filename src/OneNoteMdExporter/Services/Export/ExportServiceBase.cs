@@ -110,8 +110,11 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
                 // Suffix page title
                 EnsurePageUniquenessPerSection(page);
 
-                // Make various OneNote XML fixes before page export
-                page.OverrideOneNoteId = PageXmlPreProcessing(xmlPageContent);
+                if (!AppSettings.DisablePageXmlPreProcessing)
+                {
+                    // Make various OneNote XML fixes before page export
+                    page.OverrideOneNoteId = PageXmlPreProcessing(xmlPageContent);
+                }
 
                 // Register page and section mappings for link conversion
                 var pagePath = page.GetPageFileAbsolutePath(AppSettings.MdMaxFileLength);
