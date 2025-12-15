@@ -1,3 +1,5 @@
+Please join to your pull request a sample NoteBook file that will be used to test your evolution.
+
 # Add a new Export setting
 
 - Add the setting in [AppSettings.cs](/src/OneNoteMdExporter/Infrastructure/AppSettings.cs) with a description

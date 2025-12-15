@@ -8,6 +8,7 @@ using System.Xml.Linq;
 using System.Text.RegularExpressions;
 using alxnbl.OneNoteMdExporter.Services;
 using Serilog;
+using alxnbl.OneNoteMdExporter.Services.Export;
 
 namespace alxnbl.OneNoteMdExporter.Helpers
 {
@@ -59,21 +60,21 @@ namespace alxnbl.OneNoteMdExporter.Helpers
                 }
             };
 
-            // Register section mapping with programmatic ID
-            try
-            {
-                OneNoteApp.Instance.GetHyperlinkToObject(section.OneNoteId, null, out string sectionLink);
-                var sectionIdMatch = Regex.Match(sectionLink, @"section-id=\{([^}]+)\}", RegexOptions.IgnoreCase);
-                if (sectionIdMatch.Success)
-                {
-                    var programmaticId = sectionIdMatch.Groups[1].Value;
-                    ConverterService.RegisterSectionMapping(section.OneNoteId, programmaticId, section.GetAbsolutePath(AppSettings.MdMaxFileLength), section.Title);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning($"Failed to generate programmatic ID for section {section.Title}: {ex.Message}");
-            }
+            //// Register section mapping with programmatic ID
+            //try
+            //{
+            //    OneNoteApp.Instance.GetHyperlinkToObject(section.OneNoteId, null, out string sectionLink);
+            //    var sectionIdMatch = Regex.Match(sectionLink, @"section-id=\{([^}]+)\}", RegexOptions.IgnoreCase);
+            //    if (sectionIdMatch.Success)
+            //    {
+            //        var programmaticId = sectionIdMatch.Groups[1].Value;
+            //        ConverterService.RegisterSectionMapping(section.OneNoteId, programmaticId, section.GetAbsolutePath(AppSettings.MdMaxFileLength), section.Title);
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    Log.Warning($"Failed to generate programmatic ID for section {section.Title}: {ex.Message}");
+            //}
 
             return section;
         }
@@ -108,8 +109,9 @@ namespace alxnbl.OneNoteMdExporter.Helpers
                 var pageIdMatch = Regex.Match(pageLink, @"page-id=\{([^}]+)\}", RegexOptions.IgnoreCase);
                 if (pageIdMatch.Success)
                 {
+                    var oneNoteLinkTranslatorService = new OneNoteLinkTranslatorService();
                     var programmaticId = pageIdMatch.Groups[1].Value;
-                    ConverterService.RegisterPageMapping(page.OneNoteId, programmaticId, page.GetPageFileAbsolutePath(AppSettings.MdMaxFileLength), page.Title);
+                    oneNoteLinkTranslatorService.RegisterPageMapping(page.Id, page.OneNoteId, programmaticId, page.GetPageFileAbsolutePath(AppSettings.MdMaxFileLength), page.Title);
                 }
             }
             catch (Exception ex)

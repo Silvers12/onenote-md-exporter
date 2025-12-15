@@ -78,21 +78,6 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
             {
                 allNodes.Add(section);
                 
-                // Register section mapping with programmatic ID
-                try
-                {
-                    OneNoteApp.Instance.GetHyperlinkToObject(section.OneNoteId, null, out string sectionLink);
-                    var sectionIdMatch = Regex.Match(sectionLink, @"section-id=\{([^}]+)\}", RegexOptions.IgnoreCase);
-                    if (sectionIdMatch.Success)
-                    {
-                        var programmaticId = sectionIdMatch.Groups[1].Value;
-                        ConverterService.RegisterSectionMapping(section.OneNoteId, programmaticId, section.GetAbsolutePath(AppSettings.MdMaxFileLength), section.Title);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning($"Failed to generate programmatic ID for section {section.Title}: {ex.Message}");
-                }
 
                 if (!section.IsSectionGroup)
                 {
@@ -104,13 +89,14 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
             }
 
             // Phase 2: Export content and convert to markdown
-            Log.Information(Localizer.GetString("NotebookProcessingStartingPhase2"));
+            Log.Information("\n" + Localizer.GetString("NotebookProcessingStartingPhase2"));
 
             // First export all sections (including section groups)
             int cmptSect = 0;
             foreach (Section section in sections)
             {
-                Log.Information($"{Localizer.GetString("StartProcessingSectionX")} ({++cmptSect}/{sections.Count}) :  {section.GetPath(AppSettings.MdMaxFileLength)}\\{section.Title}");
+                Log.Information($"- {Localizer.GetString("Section")} ({++cmptSect}/{sections.Count}) :  {section.GetPath(AppSettings.MdMaxFileLength)}\\{section.Title}");
+
                 WriteSectionNodeMdFile(section);
             }
 
@@ -122,8 +108,8 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
                 {
                     MovePageHierarchyInADedicatedNotebook(page);
                 }
+                Log.Information($"- {Localizer.GetString("Page")} {++cmptPage}/{allPages.Count} : {page.Parent.Title} / {page.TitleWithPageLevelTabulation}");
 
-                Log.Information($"   {Localizer.GetString("Page")} {++cmptPage}/{allPages.Count} : {page.TitleWithPageLevelTabulation}");
                 var success = ExportPage(page);
 
                 if (!success) result.PagesOnError++;
@@ -146,37 +132,6 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
             File.WriteAllText(GetSectionMdFilePath(section), sectionMd);
         }
 
-        /// <summary>
-        /// Export a joplin md file for each page of the section and process page's attachments
-        /// </summary>
-        /// <param name="section"></param>
-        private SectionExportResult ExportSectionPages(Section section, string pageNameFilter = "")
-        {
-            var result = new SectionExportResult();
-
-            Log.Debug($"Start exporting pages of section {section.Title}");
-
-            // Get pages of the section and apply provided filter if any
-            var pages = OneNoteApp.Instance.FillSectionPages(section).Where(p => string.IsNullOrEmpty(pageNameFilter) || p.Title == pageNameFilter).ToList();
-
-            int cmpt = 0;
-
-            foreach (Page page in pages)
-            {
-                if (AppSettings.ProcessingOfPageHierarchy == PageHierarchyEnum.HierarchyAsFolderTree)
-                {
-                    MovePageHierarchyInADedicatedNotebook(page);
-                }
-
-                Log.Information($"   {Localizer.GetString("Page")} {++cmpt}/{pages.Count} : {page.TitleWithPageLevelTabulation}");
-
-                var success = ExportPage(page);
-
-                if (!success) result.PagesOnError++;
-            }
-
-            return result;
-        }
 
         private static void MovePageHierarchyInADedicatedNotebook(Page page)
         {
@@ -327,6 +282,12 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
         protected override string FinalizePageMdPostProcessing(Page page, string md)
         {
             return md;
+        }
+
+
+        protected override string GetPageWikilink(string linkText, string mdFilePath, string pageId)
+        {
+                return $"[{linkText}](:/{pageId})";
         }
     }
 }

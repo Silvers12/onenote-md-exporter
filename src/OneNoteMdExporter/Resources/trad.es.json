@@ -29,8 +29,8 @@
   "YesAnswer": "yes",
   "FoundXSections": "--> Se encontraron {0} secciones\n",
   "FoundXSectionsAndSecGrp": "--> Se encontraron {0} secciones y grupos de secciones\n",
-  "StartProcessingSectionX": "Iniciando procesamiento de la sección",
   "Page": "Página",
+  "Section": "Sección",
   "ExportEndedWithErrors": "--> ADVERTENCIA: la exportación de su cuaderno ha terminado con {1} página(s) con error.\\Puede encontrar más detalles en el archivo de registro '{2}'.\\nCarpeta de exportación : '{0}'",
   "ErrorPreventToCommunicateWithOneNote": "Ocurrió un error al intentar comunicarse con OneNote. Su instalación de Office puede estar corrupta. Puede intentar solucionarlo ejecutando la utilidad de reparación de Office. Por favor, consulte : https://support.microsoft.com/en-us/office/repair-an-office-application-7821d4b6-7c1d-4205-aa0e-a6b40c5bb88b ."
 } 

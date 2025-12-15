@@ -89,7 +89,7 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
             int cmptSect = 0;
             foreach (Section section in sections)
             {
-                Log.Information($"{Localizer.GetString("StartProcessingSectionX")} ({++cmptSect}/{sections.Count}) :  {section.GetPath(AppSettings.MdMaxFileLength)}\\{section.Title}");
+                Log.Information($"- {Localizer.GetString("Section")} ({++cmptSect}/{sections.Count}) :  {section.GetPath(AppSettings.MdMaxFileLength)}\\{section.Title}");
 
                 if (section.IsSectionGroup)
                     throw new InvalidOperationException("Cannot call ExportSection on section group with MdExport");
@@ -100,11 +100,11 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
             }
 
             // Phase 2: Export content and convert to markdown
-            Log.Information(Localizer.GetString("NotebookProcessingStartingPhase2"));
+            Log.Information("\n" + Localizer.GetString("NotebookProcessingStartingPhase2"));
             int cmptPage = 0;
             foreach (Page page in allPages)
             {
-                Log.Information($"   {Localizer.GetString("Page")} {++cmptPage}/{allPages.Count} : {page.TitleWithPageLevelTabulation}");
+                Log.Information($"- {Localizer.GetString("Page")} {++cmptPage}/{allPages.Count} : {page.Parent.Title} / {page.TitleWithPageLevelTabulation}");
                 var success = ExportPage(page);
 
                 if (!success) result.PagesOnError++;
@@ -139,6 +139,24 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
                 res = AddFrontMatterHeader(page, md);
 
             return res;
+        }
+
+        protected override string GetPageWikilink(string linkText, string mdFilePath, string pageId)
+        {
+            var normalizedPath = mdFilePath.Replace('\\', '/');
+
+            if (AppSettings.OneNoteLinksHandling == OneNoteLinksHandlingEnum.ConvertToWikilink)
+            {
+                // For Wikilinks, we use the format [[MdFilePath]] or [[MdFilePath|Display Text]]
+                return normalizedPath == linkText ?
+                    $"[[{normalizedPath}]]" :
+                    $"[[{normalizedPath}|{linkText}]]";
+            }
+            else // ConvertToMarkdown
+            {
+                normalizedPath = normalizedPath.Replace(" ", "%20");
+                return $"[{linkText}]({normalizedPath}.md)";
+            }
         }
 
         private static string AddFrontMatterHeader(Page page, string pageMd)

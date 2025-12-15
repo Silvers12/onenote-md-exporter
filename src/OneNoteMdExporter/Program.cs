@@ -141,10 +141,15 @@ namespace alxnbl.OneNoteMdExporter
 
                 var result = exportService.ExportNotebook(notebook, opts.SectionName, opts.PageName);
 
+
                 if (!string.IsNullOrEmpty(result.NoteBookExportErrorMessage))
                 {
                     // Unable to finalize notebook export
+
+                    // Highlight error message
+                    Console.BackgroundColor = ConsoleColor.DarkMagenta;
                     Log.Error(result.NoteBookExportErrorMessage);
+                    Console.BackgroundColor = ConsoleColor.Black;
 
                     if (!opts.NoInput)
                     {
@@ -155,7 +160,10 @@ namespace alxnbl.OneNoteMdExporter
                 else if (result.PagesOnError > 0)
                 {
                     Log.Information("");
-                    Log.Warning(Localizer.GetString("ExportEndedWithErrors"), Path.GetFullPath(notebook.ExportFolder), result.PagesOnError, loggerFilename);
+                    // Highlight error message
+                    Console.BackgroundColor = ConsoleColor.DarkMagenta;
+                    Log.Warning(string.Format(Localizer.GetString("ExportEndedWithErrors"), Path.GetFullPath(notebook.ExportFolder), result.PagesOnError, loggerFilename));
+                    Console.BackgroundColor = ConsoleColor.Black;
                     Log.Information("");
 
                     if (!opts.NoInput)

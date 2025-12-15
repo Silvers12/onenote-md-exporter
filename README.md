@@ -4,7 +4,7 @@ This tool is usefull to :
 * evaluate or migrate to an alternative Knowledge Management Software like Joplin, Obsidian or other softwares based on Markdown format
 * backup your OneNote Notebooks in an interoperable and open file format
 
-The tool is easy to install and use, and generally produces better results than other OneNote export methods.
+The tool is easy to install and use, and can produce better results than other OneNote export methods.
 
 # Requirements
 
@@ -55,10 +55,10 @@ Command line is supported, run `OneNoteMdExporter.exe --help` for instructions.
   * `PanDocMarkdownFormat` : choose the markdown syntax to use among [those supported by pandoc](https://pandoc.org/MANUAL.html#general-options). Use *GitHub flavor* by default.
   * `OneNoteLinksHandling` : 
     * KeepOriginal: Keep the original OneNote link format (onenote://...)
-    * ConvertToMarkdown: Convert OneNote links to markdown format "[text](url)" (suggested for Joplin)
-    * ConvertToWikilink (default): Convert OneNote links to wikilink format "[[Page Title|Display Text]]" (suggested for Obsidian). It does not support links to section or section groups. Links to specific objects inside a page are not supported and will fall back to a link to the whole page.
-    * Remove: Remove all OneNote links from the exported content but keep the text
-  * `UseHtmlStyling` : enable if your markdown editor supports HTML. Will translate styling effect (font-color and background) not supported by markdown into HTML tags.
+    * ConvertToMarkdown: Convert OneNote links to markdown format "[text](url)"
+    * ConvertToWikilink (default): Convert OneNote links to wikilink format "[[Page Title|Display Text]]"
+    * Remove: Remove all OneNote links
+  * `UseHtmlStyling` : disable if your markdown editor do not supports HTML.
 
 ## Joplin Raw Directory
 
@@ -72,32 +72,44 @@ Command line is supported, run `OneNoteMdExporter.exe --help` for instructions.
 | Hierarchy of sections | ✅ Folder hierarchy | ✅ Notebook hierarchy |
 | Page ordering inside a section | 🔴 Ordering based on md filename | ✅ Order preserved |
 | Page hierarchy | ✅ Page prefix or folder prefix | ✅ |
-| Notebook internal link (onenote://) | ✅ Links to pages (no links to section, anchors, other notebooks) | 🔴 Not tested
+| Notebook internal link (onenote://) | ✅ * | ✅ *
 
+\* Cross-notebooks links and links to sections are removed
 ___
 ___
 
 | All formats : |  |
 | --- | --- |
-| Attachments  | ✅ |
+| Attachment  | ✅ |
 | Image  | ✅ |
-| Table  | ✅ |
+| Simple table  | ✅ as markdown |
+| Complex table  | ✅ as HTML* |
 | Folded paragraphs | ✅ |
-| Image nexted into table | 🔴 Known issue [#48](https://github.com/alxnbl/onenote-md-exporter/issues/48) |
-| Font color| 🔴 Html SPAN tag |
-| Background color  | 🔴 Html or == MD  |
-| Drawing | 🟠 Flattened as image | 
-| Handwriting  | 🔴 Lost |
+| Font color| ✅ as HTML* |
+| Background color  | ✅ as HTML*  |
 | Text tags (task, star...)  | ✅ Converted into emoticons |
-| Password protected sections | 🟠 Lost unless unlocked before export |
+| Drawing | 🟠 Flattened as image | 
+| Password protected section | 🟠 Lost unless unlocked before export |
+| Handwriting  | 🔴 Lost |
 
+\* Support of the feature requires a mardown editor that supports HTML (like Joplin and Obsidian)
+
+# FAQ
+
+* An error `Unhandled exception. System.Runtime.InteropServices.COMException` occurs after starting the tool 
+  * This error in usually caused by a problem specific to your computer installation. Consider :
+    * Uninstall and reinstall Office
+    * Export notebook from an other computer : [export your notebook](/doc/notebook-onepkg-export.md), import it on an other computer and run OneNoteMdExporter
+
+* Some of my images are lost / broken during export
+  * Try to enable the option `Download all files and images` from `File -> Options -> Sync`. Force synchronisation of your notebook and try again the export.
 
 # Technical characteristics
 
-* DotNet 8 self-contained console application
-* Export page as DocX and translate them in Markdown using PanDoc
-* Offline : no call to Microsoft cloud
-* Based on Office Interop APIs
+* DotNet 10 self-contained console application
+* Export pages as DocX files and translate them in Markdown using PanDoc
+* Offline : no dependency to Microsoft cloud
+* Rely on OneNote and Word apps (based on Interop APIs)
 * Pre-processing stage of OneNote page XML structure
 * Post-processing stage based on Regex to fix formatting issues
 
@@ -120,7 +132,7 @@ Pandoc is released under the following licence terms, full licence details can b
 
 # Build sources
 
-* Install DotNet 8 : https://dotnet.microsoft.com/download/dotnet/8.0
+* Install DotNet 10 : https://dotnet.microsoft.com/download/dotnet/8.0
 * Clone this repository
 * Extract `pandoc.exe` from `pandoc-<Version>-windows-x86_64.zip` from `/src/OneNoteMdExporter/pandoc/` folder
 * Build using Visual Studio 2019 or MSBUILD.exe (`dotnet build` do not currently support COMReference : https://aka.ms/msbuild/MSB4803) 

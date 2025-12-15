@@ -14,45 +14,6 @@ namespace alxnbl.OneNoteMdExporter.Services
 {
     public static class ConverterService
     {
-        // Dictionary to store page and section mappings
-        private static readonly Dictionary<string, OneNoteLinkMetadata> PageMetadata = new();
-        private static readonly Dictionary<string, OneNoteLinkMetadata> SectionMetadata = new();
-
-        /// <summary>
-        /// Register a page mapping for link conversion; the key is the programmatic ID generated from OneNote
-        /// </summary>
-        /// <param name="pageId">OneNote page ID</param>
-        /// <param name="programmaticId">Programmatic ID generated from OneNote</param>
-        /// <param name="exportPath">Relative export path of the page</param>
-        /// <param name="title">Page title</param>
-        public static void RegisterPageMapping(string pageId, string programmaticId, string exportPath, string title)
-        {
-            PageMetadata[programmaticId] = new OneNoteLinkMetadata
-            {
-                OriginalId = pageId,
-                ProgrammaticId = programmaticId,
-                MdFilePath = exportPath,
-                Title = title
-            };
-        }
-
-        /// <summary>
-        /// Register a section mapping for link conversion; the key is the programmatic ID generated from OneNote
-        /// </summary>
-        /// <param name="sectionId">OneNote section ID</param>
-        /// <param name="programmaticId">Programmatic ID generated from OneNote</param>
-        /// <param name="exportPath">Relative export path of the section</param>
-        /// <param name="title">Section title</param>
-        public static void RegisterSectionMapping(string sectionId, string programmaticId, string exportPath, string title)
-        {
-            SectionMetadata[programmaticId] = new OneNoteLinkMetadata
-            {
-                OriginalId = sectionId,
-                ProgrammaticId = programmaticId,
-                MdFilePath = exportPath,
-                Title = title
-            };
-        }
 
         /// <summary>
         /// Convert DocX file into MD using PanDoc
@@ -161,8 +122,6 @@ namespace alxnbl.OneNoteMdExporter.Services
 
             mdFileContent = InsertMdHighlight(mdFileContent);
 
-            mdFileContent = ConvertOneNoteLinks(mdFileContent);
-
             mdFileContent = InsertMdTodoMarks(mdFileContent);
         }
 
@@ -248,81 +207,6 @@ namespace alxnbl.OneNoteMdExporter.Services
             });
 
             return pageTxtModified;
-        }
-
-        /// <summary>
-        /// Convert OneNote internal links to markdown references
-        /// </summary>
-        /// <param name="pageTxt">Markdown content</param>
-        /// <returns>Updated markdown content with converted links</returns>
-        private static string ConvertOneNoteLinks(string pageTxt)
-        {
-            if (AppSettings.OneNoteLinksHandling == OneNoteLinksHandlingEnum.KeepOriginal)
-            {
-                return pageTxt;
-            }
-
-            // Match markdown links with onenote:// URLs
-            const string regexPattern = @"\[(?<text>[^\]]+)\]\(onenote:(?<url>[^\)]+)\)";
-            
-            return Regex.Replace(pageTxt, regexPattern, match =>
-            {
-                var linkText = match.Groups["text"].Value;
-                var onenoteUrl = match.Groups["url"].Value;
-
-                if (AppSettings.OneNoteLinksHandling == OneNoteLinksHandlingEnum.Remove)
-                {
-                    return linkText;
-                }
-
-                // Try to replace OneNote Page link
-
-                // Extract page-id from URL
-                const string pageIdPattern = @"page-id=\{([^}]+)\}";
-                var pageIdMatch = Regex.Match(onenoteUrl, pageIdPattern, RegexOptions.IgnoreCase);
-                if (pageIdMatch.Success)
-                {
-                    var programmaticId = pageIdMatch.Groups[1].Value;
-                    if (PageMetadata.TryGetValue(programmaticId, out var pageMetadata))
-                    {
-                        Log.Debug($"ConvertOneNoteLinks - Found page: {pageMetadata.MdFilePath}, pageId: {programmaticId}");
-
-                        // Normalize path to use forward slashes
-                        var normalizedPath = pageMetadata.MdFilePath.Replace('\\', '/');
-                        return GetWikiLink(linkText, pageMetadata.Title, normalizedPath);
-                    }
-                    else
-                    {
-                        Log.Debug($"ConvertOneNoteLinks - No link found for pageId: {programmaticId}");
-                    }
-                }
-
-                // Try to replace OneNote Section link
-
-                Log.Debug($"ConvertOneNoteLinks - Link {linkText} removed : {onenoteUrl}");
-                // Link to a section, section group, or any other onenote unsupported link => return link text only
-
-                return linkText;
-
-                
-            });
-
-
-            static string GetWikiLink(string linkText, string title, string normalizedPath)
-            {
-                if (AppSettings.OneNoteLinksHandling == OneNoteLinksHandlingEnum.ConvertToWikilink)
-                {
-                    // For Wikilinks, we use the format [[MdFilePath]] or [[MdFilePath|Display Text]]
-                    return linkText == title ?
-                        $"[[{normalizedPath}]]" :
-                        $"[[{normalizedPath}|{linkText}]]";
-                }
-                else // ConvertToMarkdown
-                {
-                    normalizedPath = normalizedPath.Replace(" ", "%20");
-                    return $"[{linkText}]({normalizedPath}.md)";
-                }
-            }
         }
 
         private static string UnEscapeStylingSpan(string pageTxt)
