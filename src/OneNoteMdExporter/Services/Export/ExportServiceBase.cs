@@ -478,8 +478,9 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
                 // Add custom tag right before the tasks inner content
                 XCData innerNode = textElement.FirstNode as XCData;
                 var endtag = customTag == "==" ? "==" : "";
+                var spacer = customTag == "==" ? "" : " ";
 
-                innerNode.Value = $"{customTag} {innerNode.Value}{endtag}";
+                innerNode.Value = $"{customTag}{spacer}{innerNode.Value}{endtag}";
                 if (!innerNode.Value.EndsWith("\n&nbsp;\n")) innerNode.Value += "\n&nbsp;\n";
             }
         }
