@@ -16,13 +16,15 @@ using System.Xml.Linq;
 namespace alxnbl.OneNoteMdExporter.Services.Export
 {
     /// <summary>
-    /// Base class for Export Service. 
+    /// Base class for Export Service.
     /// Contains all shared logic between exporter of different formats.
     /// Abstract methods needs to be implemented by each exporter
     /// </summary>
     public abstract class ExportServiceBase : IExportService
     {
         protected abstract string ExportFormatCode { get; }
+
+        protected readonly ExportManifestService ManifestService = new ExportManifestService();
 
         protected static string GetNotebookFolderPath(Notebook notebook)
             => Path.Combine(notebook.ExportFolder, notebook.GetNotebookPath());
@@ -50,8 +52,33 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
 
         public NotebookExportResult ExportNotebook(Notebook notebook, string sectionNameFilter = "", string pageNameFilter = "")
         {
-            notebook.ExportFolder = @$"{Localizer.GetString("ExportFolder")}\{ExportFormatCode}\{notebook.GetNotebookPath()}-{DateTime.Now:yyyyMMdd HH-mm}";
-            CleanUpFolder(notebook);
+            ExportManifest existingManifest = null;
+
+            // Always use stable folder (no timestamp) to allow incremental export at any time
+            notebook.ExportFolder = @$"{Localizer.GetString("ExportFolder")}\{ExportFormatCode}\{notebook.GetNotebookPath()}";
+
+            if (AppSettings.IncrementalExport)
+            {
+                // Load existing manifest if present
+                var manifestPath = GetManifestPath(notebook);
+                existingManifest = ManifestService.LoadManifest(manifestPath);
+
+                if (existingManifest != null)
+                {
+                    Log.Information(Localizer.GetString("IncrementalModeEnabled"));
+                }
+                else
+                {
+                    Log.Information(Localizer.GetString("IncrementalModeFirstExport"));
+                }
+
+                // Don't clean up folder in incremental mode
+            }
+            else
+            {
+                // Full export: clean up folder
+                CleanUpFolder(notebook);
+            }
 
             // Initialize hierarchy of the notebook from OneNote APIs
             try
@@ -68,10 +95,16 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
                 };
             }
 
-            return ExportNotebookInTargetFormat(notebook, sectionNameFilter, pageNameFilter);
+            return ExportNotebookInTargetFormat(notebook, existingManifest, sectionNameFilter, pageNameFilter);
         }
 
-        public abstract NotebookExportResult ExportNotebookInTargetFormat(Notebook notebook, string sectionNameFilter = "", string pageNameFilter = "");
+        /// <summary>
+        /// Get the path to the manifest file for a notebook
+        /// </summary>
+        protected string GetManifestPath(Notebook notebook)
+            => Path.Combine(notebook.ExportFolder, ".export-manifest.json");
+
+        public abstract NotebookExportResult ExportNotebookInTargetFormat(Notebook notebook, ExportManifest existingManifest, string sectionNameFilter = "", string pageNameFilter = "");
 
         private static void CleanUpFolder(Notebook notebook)
         {
@@ -227,6 +260,11 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
                     {
                         LogError(page, ex, string.Format(Localizer.GetString("ErrorDuringPageProcessing"), page.TitleWithPageLevelTabulation, page.Id, ex.Message));
                     }
+                }
+                else if (ex.Message.Contains("0x8004202B"))
+                {
+                    // Page corrupted or not synchronized
+                    LogError(page, ex, string.Format(Localizer.GetString("ErrorPageCorruptedOrNotSynced"), page.TitleWithPageLevelTabulation, page.Id));
                 }
                 else
                 {

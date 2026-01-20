@@ -67,7 +67,17 @@ namespace alxnbl.OneNoteMdExporter.Infrastructure
         /// OneNote indentation handling
         /// </summary>
         public static IndentingStyleEnum IndentingStyle { get; set; } = IndentingStyleEnum.ConvertToBullets;
-        
+
+        /// <summary>
+        /// Enable incremental export mode: only export pages that have been modified since the last export
+        /// </summary>
+        public static bool IncrementalExport { get; set; } = false;
+
+        /// <summary>
+        /// When incremental export is enabled, automatically delete files for pages that have been deleted in OneNote
+        /// </summary>
+        public static bool CleanupDeletedPages { get; set; } = true;
+
 
         /*
          * Markdown rendering Settings

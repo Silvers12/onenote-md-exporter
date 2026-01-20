@@ -57,9 +57,10 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
         /// Export a notebook in Joplin folder format
         /// </summary>
         /// <param name="notebook">The notebook</param>
+        /// <param name="existingManifest">Existing manifest for incremental export (can be null)</param>
         /// <param name="sectionNameFilter">Only export the specified section</param>
         /// <param name="pageNameFilter">Only export the specified page</param>
-        public override NotebookExportResult ExportNotebookInTargetFormat(Notebook notebook, string sectionNameFilter = "", string pageNameFilter = "")
+        public override NotebookExportResult ExportNotebookInTargetFormat(Notebook notebook, ExportManifest existingManifest, string sectionNameFilter = "", string pageNameFilter = "")
         {
             var result = new NotebookExportResult();
 
@@ -77,7 +78,7 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
             foreach (Section section in sections)
             {
                 allNodes.Add(section);
-                
+
 
                 if (!section.IsSectionGroup)
                 {
@@ -86,6 +87,21 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
                     allPages.AddRange(pages);
                     allNodes.AddRange(pages);
                 }
+            }
+
+            // Compute diff if incremental mode is enabled
+            ExportDiff diff = null;
+            ExportManifest newManifest = null;
+
+            if (AppSettings.IncrementalExport)
+            {
+                diff = ManifestService.ComputeDiff(existingManifest, allPages);
+                newManifest = ManifestService.CreateManifest(notebook, ExportFormatCode);
+
+                // Log statistics
+                Log.Information(String.Format(Localizer.GetString("IncrementalStats"),
+                    allPages.Count, diff.NewPages.Count, diff.ModifiedPages.Count,
+                    diff.UnchangedPages.Count, diff.DeletedPages.Count));
             }
 
             // Phase 2: Export content and convert to markdown
@@ -102,17 +118,89 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
 
             // Then export all pages
             int cmptPage = 0;
+            int skippedCount = 0;
+
             foreach (Page page in allPages)
             {
                 if (AppSettings.ProcessingOfPageHierarchy == PageHierarchyEnum.HierarchyAsFolderTree)
                 {
                     MovePageHierarchyInADedicatedNotebook(page);
                 }
-                Log.Information($"- {Localizer.GetString("Page")} {++cmptPage}/{allPages.Count} : {page.Parent.Title} / {page.TitleWithPageLevelTabulation}");
+
+                cmptPage++;
+                var pageRelPath = page.Parent.Title + " / " + page.TitleWithPageLevelTabulation;
+
+                // Check if we should skip this page in incremental mode
+                if (AppSettings.IncrementalExport && diff != null)
+                {
+                    if (diff.UnchangedPages.Contains(page))
+                    {
+                        Log.Information($"- [SKIP] {Localizer.GetString("Page")} {cmptPage}/{allPages.Count} : {pageRelPath}");
+                        skippedCount++;
+
+                        // Add existing manifest entry to new manifest
+                        if (existingManifest?.Pages != null && existingManifest.Pages.TryGetValue(page.OneNoteId, out var existingEntry))
+                        {
+                            newManifest.Pages[page.OneNoteId] = existingEntry;
+                        }
+                        continue;
+                    }
+
+                    var status = diff.NewPages.Contains(page) ? "[NEW]" : "[UPDATE]";
+                    Log.Information($"- {status} {Localizer.GetString("Page")} {cmptPage}/{allPages.Count} : {pageRelPath}");
+                }
+                else
+                {
+                    Log.Information($"- {Localizer.GetString("Page")} {cmptPage}/{allPages.Count} : {pageRelPath}");
+                }
 
                 var success = ExportPage(page);
 
-                if (!success) result.PagesOnError++;
+                if (!success)
+                {
+                    result.PagesOnError++;
+                }
+                else if (AppSettings.IncrementalExport && newManifest != null)
+                {
+                    // Add page to manifest after successful export
+                    var exportPath = Path.GetRelativePath(notebook.ExportFolder, GetPageMdFilePath(page));
+                    newManifest.Pages[page.OneNoteId] = ManifestService.CreateEntry(page, exportPath);
+                }
+            }
+
+            // Handle deleted pages in incremental mode
+            if (AppSettings.IncrementalExport && diff != null && AppSettings.CleanupDeletedPages)
+            {
+                foreach (var deletedPage in diff.DeletedPages)
+                {
+                    var deletedFilePath = Path.Combine(notebook.ExportFolder, deletedPage.ExportPath);
+                    if (File.Exists(deletedFilePath))
+                    {
+                        try
+                        {
+                            File.Delete(deletedFilePath);
+                            Log.Information($"- [DELETE] {deletedPage.Title} ({deletedPage.ExportPath})");
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Warning($"Failed to delete file {deletedFilePath}: {ex.Message}");
+                        }
+                    }
+                }
+            }
+
+            // Save manifest in incremental mode
+            if (AppSettings.IncrementalExport && newManifest != null)
+            {
+                var manifestPath = GetManifestPath(notebook);
+                ManifestService.SaveManifest(newManifest, manifestPath);
+                Log.Information(String.Format(Localizer.GetString("ManifestSaved"), newManifest.Pages.Count));
+            }
+
+            // Log summary for incremental mode
+            if (AppSettings.IncrementalExport && skippedCount > 0)
+            {
+                Log.Information(String.Format(Localizer.GetString("IncrementalSummary"), skippedCount, cmptPage - skippedCount));
             }
 
             return result;

@@ -43,6 +43,12 @@ namespace alxnbl.OneNoteMdExporter
 
             [Option("ignore-errors", Required = false, HelpText = "Export all notebook event in case of error")]
             public bool IgnoreErrors { get; set; }
+
+            [Option("incremental", Required = false, HelpText = "Export only modified pages since last export (incremental mode)")]
+            public bool Incremental { get; set; }
+
+            [Option("full-export", Required = false, HelpText = "Force full export, ignore incremental mode even if enabled in settings")]
+            public bool FullExport { get; set; }
         }
 
         public static void Main(params string[] args)
@@ -67,6 +73,16 @@ namespace alxnbl.OneNoteMdExporter
         {
             AppSettings.LoadAppSettings();
             AppSettings.Debug = opts.Debug;
+
+            // Handle incremental export flags
+            if (opts.Incremental)
+            {
+                AppSettings.IncrementalExport = true;
+            }
+            if (opts.FullExport)
+            {
+                AppSettings.IncrementalExport = false;
+            }
 
             Log.Debug("Debug mode: {DebugMode}", AppSettings.Debug);
             InitLogger();
@@ -127,6 +143,10 @@ namespace alxnbl.OneNoteMdExporter
                 Thread.Sleep(3000);
                 return;
             }
+
+            // Ask for incremental mode if not specified via CLI and interactive mode
+            if (!opts.NoInput && !opts.Incremental && !opts.FullExport)
+                IncrementalExportSelectionForm();
 
             if (!opts.NoInput)
                 UpdateSettingsForm();
@@ -267,6 +287,38 @@ namespace alxnbl.OneNoteMdExporter
             Log.Debug($"Format chosen: {exportFormat}");
 
             return exportFormat;
+        }
+
+        private static void IncrementalExportSelectionForm()
+        {
+            Log.Information(Localizer.GetString("ChooseIncrementalMode"));
+            Log.Information(Localizer.GetString("ChooseIncrementalMode1"));
+            Log.Information(Localizer.GetString("ChooseIncrementalMode2"));
+
+            var input = Console.ReadLine();
+
+            Log.Information("");
+
+            // Select 1st option (full export) by default
+            if (string.IsNullOrEmpty(input) || input == "1")
+            {
+                AppSettings.IncrementalExport = false;
+                if (string.IsNullOrEmpty(input))
+                {
+                    Console.CursorTop -= 2;
+                    Console.WriteLine("1\n");
+                }
+            }
+            else if (input == "2")
+            {
+                AppSettings.IncrementalExport = true;
+                Log.Debug("Incremental export mode enabled");
+            }
+            else
+            {
+                // Invalid input, default to full export
+                AppSettings.IncrementalExport = false;
+            }
         }
 
         private static List<Notebook> GetNotebookFromName(string notebookName)

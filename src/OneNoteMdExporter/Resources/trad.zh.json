@@ -26,5 +26,17 @@
   "YesAnswer": "yes",
   "FoundXSections": "--> 找到 {0} 个章节\n",
   "FoundXSectionsAndSecGrp": "--> 在章节组中找到 {0} 个章节\n",
-  "Page": "页面"
+  "Page": "页面",
+  "Section": "章节",
+  "NotebookProcessingStartingPhase1": "*** 阶段1: 构建笔记本树并收集元数据... ***",
+  "NotebookProcessingStartingPhase2": "*** 阶段2: 导出内容并转换为markdown... ***",
+  "ChooseIncrementalMode": "\n是否启用增量导出？",
+  "ChooseIncrementalMode1": "[1] 否 - 完整导出（默认）",
+  "ChooseIncrementalMode2": "[2] 是 - 仅导出自上次导出以来修改的页面",
+  "IncrementalModeEnabled": "--> 增量模式已启用：仅导出已修改的页面",
+  "IncrementalModeFirstExport": "--> 增量模式已启用：首次导出，将导出所有页面",
+  "IncrementalStats": "--> 找到 {0} 个页面：{1} 个新页面，{2} 个已修改，{3} 个未更改，{4} 个已删除",
+  "IncrementalSummary": "--> 跳过 {0} 个页面（未更改），导出 {1} 个页面",
+  "ManifestSaved": "--> 清单已保存（跟踪 {0} 个页面）",
+  "ErrorPageCorruptedOrNotSynced": "页面 '{0}' [{1}]：OneNote错误 - 页面可能已损坏或未同步。请尝试在OneNote中同步笔记本后重试。"
 }

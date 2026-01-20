@@ -33,5 +33,14 @@
   "ExportEndedWithErrors": "--> ATTENTION: l'export du bloc-note s'est terminé avec {1} page(s) en erreur.\nVous pouvez consulter le détail des logs dans le fichier '{2}'.\nDossier de l'export : '{0}'",
   "ErrorPreventToCommunicateWithOneNote": "Une erreur s'est produit lors de la communication avec OneNote. Votre installation d'Office est peut être corrompue. Vous pouvez tenter de la réparer en exécutant l'utilitaire de réparation Office. Pour cela consulter la page suivante : https://support.microsoft.com/fr-fr/office/r%C3%A9parer-une-application-office-7821d4b6-7c1d-4205-aa0e-a6b40c5bb88b .",
   "NotebookProcessingStartingPhase1": "*** Phase 1: Construction de l'arborescence du blocnote est initialisation des metadata... ***",
-  "NotebookProcessingStartingPhase2": "*** Phase 2: Export du contenu et transformation... ***"
+  "NotebookProcessingStartingPhase2": "*** Phase 2: Export du contenu et transformation... ***",
+  "ChooseIncrementalMode": "\nVoulez-vous activer l'export incrémental ?",
+  "ChooseIncrementalMode1": "[1] Non - Export complet (défaut)",
+  "ChooseIncrementalMode2": "[2] Oui - Exporter uniquement les pages modifiées depuis le dernier export",
+  "IncrementalModeEnabled": "--> Mode incrémental activé : seules les pages modifiées seront exportées",
+  "IncrementalModeFirstExport": "--> Mode incrémental activé : premier export, toutes les pages seront exportées",
+  "IncrementalStats": "--> {0} pages trouvées : {1} nouvelles, {2} modifiées, {3} inchangées, {4} supprimées",
+  "IncrementalSummary": "--> {0} pages ignorées (inchangées), {1} pages exportées",
+  "ManifestSaved": "--> Manifeste sauvegardé ({0} pages suivies)",
+  "ErrorPageCorruptedOrNotSynced": "Page '{0}' [{1}] : Erreur OneNote - la page est peut-être corrompue ou non synchronisée. Essayez de synchroniser le bloc-notes dans OneNote puis réessayez."
 }

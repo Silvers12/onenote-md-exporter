@@ -34,5 +34,14 @@
   "ExportEndedWithErrors": "--> WARNING: export of your notebook has ended with {1} page(s) on error.\\You can find more details in the log file '{2}'.\\nExport folder : '{0}'",
   "ErrorPreventToCommunicateWithOneNote": "An error occurs while trying to communicate with OneNote. Your Office installation may be corrupted. You can try to fix this by running the Office repair utility. Please refer to : https://support.microsoft.com/en-us/office/repair-an-office-application-7821d4b6-7c1d-4205-aa0e-a6b40c5bb88b .",
   "NotebookProcessingStartingPhase1": "*** Phase 1: Building notebook tree and collecting metadata... ***",
-  "NotebookProcessingStartingPhase2": "*** Phase 2: Exporting content and converting to markdown... ***"
+  "NotebookProcessingStartingPhase2": "*** Phase 2: Exporting content and converting to markdown... ***",
+  "ChooseIncrementalMode": "\nDo you want to enable incremental export?",
+  "ChooseIncrementalMode1": "[1] No - Full export (default)",
+  "ChooseIncrementalMode2": "[2] Yes - Export only modified pages since last export",
+  "IncrementalModeEnabled": "--> Incremental mode enabled: only modified pages will be exported",
+  "IncrementalModeFirstExport": "--> Incremental mode enabled: first export, all pages will be exported",
+  "IncrementalStats": "--> {0} pages found: {1} new, {2} modified, {3} unchanged, {4} deleted",
+  "IncrementalSummary": "--> {0} pages skipped (unchanged), {1} pages exported",
+  "ManifestSaved": "--> Manifest saved ({0} pages tracked)",
+  "ErrorPageCorruptedOrNotSynced": "Page '{0}' [{1}]: OneNote error - page may be corrupted or not synchronized. Try synchronizing the notebook in OneNote and retry."
 }

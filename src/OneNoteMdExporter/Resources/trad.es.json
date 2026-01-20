@@ -32,5 +32,16 @@
   "Page": "Página",
   "Section": "Sección",
   "ExportEndedWithErrors": "--> ADVERTENCIA: la exportación de su cuaderno ha terminado con {1} página(s) con error.\\Puede encontrar más detalles en el archivo de registro '{2}'.\\nCarpeta de exportación : '{0}'",
-  "ErrorPreventToCommunicateWithOneNote": "Ocurrió un error al intentar comunicarse con OneNote. Su instalación de Office puede estar corrupta. Puede intentar solucionarlo ejecutando la utilidad de reparación de Office. Por favor, consulte : https://support.microsoft.com/en-us/office/repair-an-office-application-7821d4b6-7c1d-4205-aa0e-a6b40c5bb88b ."
+  "ErrorPreventToCommunicateWithOneNote": "Ocurrió un error al intentar comunicarse con OneNote. Su instalación de Office puede estar corrupta. Puede intentar solucionarlo ejecutando la utilidad de reparación de Office. Por favor, consulte : https://support.microsoft.com/en-us/office/repair-an-office-application-7821d4b6-7c1d-4205-aa0e-a6b40c5bb88b .",
+  "NotebookProcessingStartingPhase1": "*** Fase 1: Construyendo árbol del cuaderno y recopilando metadatos... ***",
+  "NotebookProcessingStartingPhase2": "*** Fase 2: Exportando contenido y convirtiendo a markdown... ***",
+  "ChooseIncrementalMode": "\n¿Desea habilitar la exportación incremental?",
+  "ChooseIncrementalMode1": "[1] No - Exportación completa (predeterminado)",
+  "ChooseIncrementalMode2": "[2] Sí - Exportar solo páginas modificadas desde la última exportación",
+  "IncrementalModeEnabled": "--> Modo incremental activado: solo se exportarán las páginas modificadas",
+  "IncrementalModeFirstExport": "--> Modo incremental activado: primera exportación, se exportarán todas las páginas",
+  "IncrementalStats": "--> {0} páginas encontradas: {1} nuevas, {2} modificadas, {3} sin cambios, {4} eliminadas",
+  "IncrementalSummary": "--> {0} páginas omitidas (sin cambios), {1} páginas exportadas",
+  "ManifestSaved": "--> Manifiesto guardado ({0} páginas rastreadas)",
+  "ErrorPageCorruptedOrNotSynced": "Página '{0}' [{1}]: Error de OneNote - la página puede estar corrupta o no sincronizada. Intente sincronizar el cuaderno en OneNote y vuelva a intentarlo."
 } 
