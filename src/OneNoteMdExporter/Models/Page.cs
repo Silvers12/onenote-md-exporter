@@ -33,7 +33,7 @@ namespace alxnbl.OneNoteMdExporter.Models
             } 
         }
         public string TitleWithNoInvalidChars(int maxLength)
-            => Title.RemoveInvalidFileNameChars().TrimEnd().Left(maxLength); // TrimEnd -> Fix https://github.com/alxnbl/onenote-md-exporter/issues/93
+            => Title.RemoveInvalidFileNameChars().TrimEnd().Left(maxLength).TrimEnd(' ', '(', '[', '-', '.'); // TrimEnd after Left to fix truncated names ending with problematic chars
 
         public IList<Attachement> Attachements { get; set; } = [];
         public IList<Attachement> ImageAttachements { get => Attachements.Where(a => a.Type == AttachementType.Image).ToList(); }

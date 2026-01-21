@@ -46,10 +46,11 @@ namespace alxnbl.OneNoteMdExporter.Models
 
         public string GetPath(int pageTitleMaxLength)
         {
+            // TrimEnd after Left to fix truncated names ending with problematic chars (space, parenthesis, etc.)
             if (Parent == null)
-                return Title.RemoveInvalidFileNameChars().Left(pageTitleMaxLength);
+                return Title.RemoveInvalidFileNameChars().Left(pageTitleMaxLength).TrimEnd(' ', '(', '[', '-', '.');
             else
-                return Path.Combine(Parent.GetPath(pageTitleMaxLength), Title.RemoveInvalidFileNameChars().Left(pageTitleMaxLength));
+                return Path.Combine(Parent.GetPath(pageTitleMaxLength), Title.RemoveInvalidFileNameChars().Left(pageTitleMaxLength).TrimEnd(' ', '(', '[', '-', '.'));
         }
 
         public string GetAbsolutePath(int pageTitleMaxLength) => string.Concat("\\", GetPath(pageTitleMaxLength));
