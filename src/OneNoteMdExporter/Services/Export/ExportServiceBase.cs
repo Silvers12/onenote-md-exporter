@@ -263,8 +263,25 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
                 }
                 else if (ex.Message.Contains("0x8004202B"))
                 {
-                    // Page corrupted or not synchronized
+                    // Page corrupted or not synchronized - try retry with delay
+                    if (!retry)
+                    {
+                        var delayBeforeRetrySeconds = 5;
+                        Log.Warning($"Page '{page.TitleWithPageLevelTabulation}' [{page.Id}]: OneNote error 0x8004202B - retrying in {delayBeforeRetrySeconds}s...");
+
+                        Thread.Sleep(delayBeforeRetrySeconds * 1000);
+
+                        var retrySuccess = ExportPage(page, true);
+                        if (retrySuccess)
+                        {
+                            Log.Information($"Page '{page.GetPageFileRelativePath(AppSettings.MdMaxFileLength)}': {Localizer.GetString("SuccessPageExportAfterRetry")}");
+                            return true;
+                        }
+                    }
+
                     LogError(page, ex, string.Format(Localizer.GetString("ErrorPageCorruptedOrNotSynced"), page.TitleWithPageLevelTabulation, page.Id));
+                    Log.Debug($"Full exception for page '{page.Title}': {ex.GetType().Name}: {ex.Message}");
+                    Log.Debug($"Stack trace: {ex.StackTrace}");
                 }
                 else
                 {

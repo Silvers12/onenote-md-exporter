@@ -4,6 +4,7 @@ using Microsoft.VisualBasic.FileIO;
 using Serilog;
 using System;
 using System.IO;
+using System.Linq;
 using System.Xml.Linq;
 
 namespace alxnbl.OneNoteMdExporter.Models
@@ -63,12 +64,53 @@ namespace alxnbl.OneNoteMdExporter.Models
             // Update the XML as it still points to the page to clone
             xmlPageContent.Attribute("ID").Value = tempPageId;
 
+            // Handle problematic page titles (starting with special characters like ---- or other)
+            // OneNote API throws 0x8004202B error when UpdatePageContent is called with such titles
+            var nameAttribute = xmlPageContent.Attribute("name");
+            var originalTitle = nameAttribute?.Value;
+            var titleWasModified = false;
+
+            if (!string.IsNullOrEmpty(originalTitle) && IsProblematicTitle(originalTitle))
+            {
+                Log.Debug($"Page title '{originalTitle}' contains problematic characters, using temporary title for cloning");
+                nameAttribute.Value = "_TEMP_" + originalTitle.TrimStart('-', ' ');
+                titleWasModified = true;
+            }
+
             // Replace created temp page with our page content
             oneNoteApp.UpdatePageContent(xmlPageContent.ToString(SaveOptions.DisableFormatting));
+
+            // Restore original title if it was modified
+            if (titleWasModified && nameAttribute != null)
+            {
+                Log.Debug($"Restoring original page title '{originalTitle}'");
+                nameAttribute.Value = originalTitle;
+                oneNoteApp.UpdatePageContent(xmlPageContent.ToString(SaveOptions.DisableFormatting));
+            }
 
             Log.Debug($"Page successfully cloned to the temp page {tempPageId}");
 
             return tempPageId;
+        }
+
+        /// <summary>
+        /// Check if a page title might cause issues with OneNote API
+        /// Titles starting with dashes (---) or certain special characters can cause 0x8004202B errors
+        /// </summary>
+        private static bool IsProblematicTitle(string title)
+        {
+            if (string.IsNullOrEmpty(title))
+                return false;
+
+            // Titles starting with dashes are problematic
+            if (title.StartsWith("-"))
+                return true;
+
+            // Titles that are only special characters
+            if (title.Trim().All(c => !char.IsLetterOrDigit(c)))
+                return true;
+
+            return false;
         }
 
         /// <summary>
