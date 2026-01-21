@@ -69,36 +69,90 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
 
             Log.Information(string.Format(Localizer.GetString("FoundXSectionsAndSecGrp"), sections.Count));
 
-            // Phase 1: Build complete tree and collect metadata
+            // Phase 1: Build complete tree and collect metadata (optimized with section diff)
             Log.Information(Localizer.GetString("NotebookProcessingStartingPhase1"));
             var allNodes = new List<Node>(); // Will contain both sections and pages
             var allPages = new List<Page>();
 
-            // First, collect all sections and section groups
-            foreach (Section section in sections)
-            {
-                allNodes.Add(section);
-
-
-                if (!section.IsSectionGroup)
-                {
-                    // Get pages list and collect metadata
-                    var pages = OneNoteApp.Instance.FillSectionPages(section).Where(p => string.IsNullOrEmpty(pageNameFilter) || p.Title == pageNameFilter).ToList();
-                    allPages.AddRange(pages);
-                    allNodes.AddRange(pages);
-                }
-            }
-
-            // Compute diff if incremental mode is enabled
-            ExportDiff diff = null;
+            // Compute section diff for Phase 1 optimization (only in incremental mode)
+            SectionDiff sectionDiff = null;
             ExportManifest newManifest = null;
 
             if (AppSettings.IncrementalExport)
             {
-                diff = ManifestService.ComputeDiff(existingManifest, allPages);
+                sectionDiff = ManifestService.ComputeSectionDiff(existingManifest, sections);
                 newManifest = ManifestService.CreateManifest(notebook, ExportFormatCode);
 
-                // Log statistics
+                // Log section statistics
+                Log.Information(String.Format(Localizer.GetString("SectionDiffStats"),
+                    sectionDiff.TotalSections, sectionDiff.NewSections.Count, sectionDiff.ModifiedSections.Count,
+                    sectionDiff.UnchangedSections.Count, sectionDiff.DeletedSections.Count));
+            }
+
+            // First, collect all sections and section groups
+            int sectionsLoaded = 0;
+            int sectionsSkipped = 0;
+
+            foreach (Section section in sections)
+            {
+                allNodes.Add(section);
+
+                if (!section.IsSectionGroup)
+                {
+                    // In incremental mode, check if we can skip loading this section's pages
+                    if (AppSettings.IncrementalExport && sectionDiff != null)
+                    {
+                        if (sectionDiff.UnchangedSections.Contains(section))
+                        {
+                            // [SKIP] - Retrieve pages from manifest cache
+                            var cachedPages = ManifestService.GetPagesFromManifestForSection(existingManifest, section)
+                                .Where(p => string.IsNullOrEmpty(pageNameFilter) || p.Title == pageNameFilter).ToList();
+                            allPages.AddRange(cachedPages);
+                            allNodes.AddRange(cachedPages);
+                            sectionsSkipped++;
+
+                            // Add section to new manifest
+                            newManifest.Sections[section.OneNoteId] = ManifestService.CreateSectionEntry(section);
+                            continue;
+                        }
+
+                        sectionsLoaded++;
+                    }
+
+                    // [LOAD] - Get pages list from OneNote
+                    var pages = OneNoteApp.Instance.FillSectionPages(section).Where(p => string.IsNullOrEmpty(pageNameFilter) || p.Title == pageNameFilter).ToList();
+                    allPages.AddRange(pages);
+                    allNodes.AddRange(pages);
+
+                    // Add section to new manifest in incremental mode
+                    if (AppSettings.IncrementalExport && newManifest != null)
+                    {
+                        newManifest.Sections[section.OneNoteId] = ManifestService.CreateSectionEntry(section);
+                    }
+                }
+            }
+
+            // Save manifest after Phase 1 to preserve section metadata on interruption
+            var manifestPath = AppSettings.IncrementalExport ? GetManifestPath(notebook) : null;
+            if (AppSettings.IncrementalExport && newManifest != null)
+            {
+                ManifestService.SaveManifest(newManifest, manifestPath);
+            }
+
+            // Log Phase 1 optimization summary
+            if (AppSettings.IncrementalExport && sectionsSkipped > 0)
+            {
+                Log.Information(String.Format(Localizer.GetString("Phase1Summary"), sectionsSkipped, sectionsLoaded));
+            }
+
+            // Compute page diff if incremental mode is enabled
+            ExportDiff diff = null;
+
+            if (AppSettings.IncrementalExport)
+            {
+                diff = ManifestService.ComputeDiff(existingManifest, allPages);
+
+                // Log page statistics
                 Log.Information(String.Format(Localizer.GetString("IncrementalStats"),
                     allPages.Count, diff.NewPages.Count, diff.ModifiedPages.Count,
                     diff.UnchangedPages.Count, diff.DeletedPages.Count));
@@ -159,12 +213,25 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
                 if (!success)
                 {
                     result.PagesOnError++;
+
+                    // Mark the section as having errors so it will be reloaded on next incremental export
+                    if (AppSettings.IncrementalExport && newManifest != null)
+                    {
+                        var sectionId = (page.Parent as Section)?.OneNoteId;
+                        if (!string.IsNullOrEmpty(sectionId) && newManifest.Sections.TryGetValue(sectionId, out var sectionEntry))
+                        {
+                            sectionEntry.HasExportErrors = true;
+                        }
+                    }
                 }
                 else if (AppSettings.IncrementalExport && newManifest != null)
                 {
                     // Add page to manifest after successful export
                     var exportPath = Path.GetRelativePath(notebook.ExportFolder, GetPageMdFilePath(page));
                     newManifest.Pages[page.OneNoteId] = ManifestService.CreateEntry(page, exportPath);
+
+                    // Save manifest incrementally after each page to allow resume on interruption
+                    ManifestService.SaveManifest(newManifest, manifestPath);
                 }
             }
 
@@ -189,10 +256,9 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
                 }
             }
 
-            // Save manifest in incremental mode
+            // Final manifest save in incremental mode (ensures sections and skipped pages are saved)
             if (AppSettings.IncrementalExport && newManifest != null)
             {
-                var manifestPath = GetManifestPath(notebook);
                 ManifestService.SaveManifest(newManifest, manifestPath);
                 Log.Information(String.Format(Localizer.GetString("ManifestSaved"), newManifest.Pages.Count));
             }

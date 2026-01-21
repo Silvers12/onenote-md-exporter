@@ -78,6 +78,17 @@ namespace alxnbl.OneNoteMdExporter.Infrastructure
         /// </summary>
         public static bool CleanupDeletedPages { get; set; } = true;
 
+        /// <summary>
+        /// When enabled, automatically retry export if there are pages with errors until all pages are exported successfully
+        /// or no progress is made (same number of errors as previous iteration)
+        /// </summary>
+        public static bool RetryOnErrors { get; set; } = false;
+
+        /// <summary>
+        /// Maximum number of retry iterations when RetryOnErrors is enabled (0 = unlimited)
+        /// </summary>
+        public static int MaxRetryIterations { get; set; } = 10;
+
 
         /*
          * Markdown rendering Settings

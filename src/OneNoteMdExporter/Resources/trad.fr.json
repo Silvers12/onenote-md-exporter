@@ -42,5 +42,14 @@
   "IncrementalStats": "--> {0} pages trouvées : {1} nouvelles, {2} modifiées, {3} inchangées, {4} supprimées",
   "IncrementalSummary": "--> {0} pages ignorées (inchangées), {1} pages exportées",
   "ManifestSaved": "--> Manifeste sauvegardé ({0} pages suivies)",
-  "ErrorPageCorruptedOrNotSynced": "Page '{0}' [{1}] : Erreur OneNote - la page est peut-être corrompue ou non synchronisée. Essayez de synchroniser le bloc-notes dans OneNote puis réessayez."
+  "ErrorPageCorruptedOrNotSynced": "Page '{0}' [{1}] : Erreur OneNote - la page est peut-être corrompue ou non synchronisée. Essayez de synchroniser le bloc-notes dans OneNote puis réessayez.",
+  "SectionDiffStats": "--> {0} sections trouvées : {1} nouvelles, {2} modifiées, {3} inchangées, {4} supprimées",
+  "Phase1Summary": "--> Phase 1 optimisée : {0} sections ignorées (cache), {1} sections chargées depuis OneNote",
+  "ChooseRetryOnErrors": "\nVoulez-vous activer la boucle automatique en cas d'erreurs ?",
+  "ChooseRetryOnErrors1": "[1] Non - Arrêter après le premier passage (défaut)",
+  "ChooseRetryOnErrors2": "[2] Oui - Boucler jusqu'à succès ou absence de progrès",
+  "RetryIteration": "*** Itération de retry {0} ({1} erreurs restantes) ***",
+  "RetryNoProgress": "--> Arrêt du retry : aucun progrès ({0} erreurs restantes)",
+  "RetryMaxIterations": "--> Arrêt du retry : nombre max d'itérations ({0}) atteint ({1} erreurs restantes)",
+  "RetrySuccess": "--> Toutes les pages exportées avec succès après {0} itérations"
 }

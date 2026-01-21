@@ -38,5 +38,14 @@
   "IncrementalStats": "--> 找到 {0} 个页面：{1} 个新页面，{2} 个已修改，{3} 个未更改，{4} 个已删除",
   "IncrementalSummary": "--> 跳过 {0} 个页面（未更改），导出 {1} 个页面",
   "ManifestSaved": "--> 清单已保存（跟踪 {0} 个页面）",
-  "ErrorPageCorruptedOrNotSynced": "页面 '{0}' [{1}]：OneNote错误 - 页面可能已损坏或未同步。请尝试在OneNote中同步笔记本后重试。"
+  "ErrorPageCorruptedOrNotSynced": "页面 '{0}' [{1}]：OneNote错误 - 页面可能已损坏或未同步。请尝试在OneNote中同步笔记本后重试。",
+  "SectionDiffStats": "--> 找到 {0} 个章节：{1} 个新章节，{2} 个已修改，{3} 个未更改，{4} 个已删除",
+  "Phase1Summary": "--> 阶段1优化：跳过 {0} 个章节（缓存），从OneNote加载 {1} 个章节",
+  "ChooseRetryOnErrors": "\n是否启用错误自动重试？",
+  "ChooseRetryOnErrors1": "[1] 否 - 第一次完成后停止（默认）",
+  "ChooseRetryOnErrors2": "[2] 是 - 循环直到所有页面成功或没有进展",
+  "RetryIteration": "*** 重试迭代 {0}（剩余 {1} 个错误）***",
+  "RetryNoProgress": "--> 停止重试：没有进展（剩余 {0} 个错误）",
+  "RetryMaxIterations": "--> 停止重试：达到最大迭代次数 ({0})（剩余 {1} 个错误）",
+  "RetrySuccess": "--> 经过 {0} 次迭代后所有页面导出成功"
 }

@@ -43,5 +43,14 @@
   "IncrementalStats": "--> {0} pages found: {1} new, {2} modified, {3} unchanged, {4} deleted",
   "IncrementalSummary": "--> {0} pages skipped (unchanged), {1} pages exported",
   "ManifestSaved": "--> Manifest saved ({0} pages tracked)",
-  "ErrorPageCorruptedOrNotSynced": "Page '{0}' [{1}]: OneNote error - page may be corrupted or not synchronized. Try synchronizing the notebook in OneNote and retry."
+  "ErrorPageCorruptedOrNotSynced": "Page '{0}' [{1}]: OneNote error - page may be corrupted or not synchronized. Try synchronizing the notebook in OneNote and retry.",
+  "SectionDiffStats": "--> {0} sections found: {1} new, {2} modified, {3} unchanged, {4} deleted",
+  "Phase1Summary": "--> Phase 1 optimized: {0} sections skipped (cached), {1} sections loaded from OneNote",
+  "ChooseRetryOnErrors": "\nDo you want to enable automatic retry on errors?",
+  "ChooseRetryOnErrors1": "[1] No - Stop after first pass (default)",
+  "ChooseRetryOnErrors2": "[2] Yes - Retry until all pages succeed or no progress",
+  "RetryIteration": "*** Retry iteration {0} ({1} errors remaining) ***",
+  "RetryNoProgress": "--> Stopping retry: no progress made ({0} errors remain)",
+  "RetryMaxIterations": "--> Stopping retry: max iterations ({0}) reached ({1} errors remain)",
+  "RetrySuccess": "--> All pages exported successfully after {0} iterations"
 }

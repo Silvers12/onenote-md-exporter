@@ -49,6 +49,9 @@ namespace alxnbl.OneNoteMdExporter
 
             [Option("full-export", Required = false, HelpText = "Force full export, ignore incremental mode even if enabled in settings")]
             public bool FullExport { get; set; }
+
+            [Option("retry-on-errors", Required = false, HelpText = "Automatically retry export until all pages succeed or no progress is made")]
+            public bool RetryOnErrors { get; set; }
         }
 
         public static void Main(params string[] args)
@@ -82,6 +85,10 @@ namespace alxnbl.OneNoteMdExporter
             if (opts.FullExport)
             {
                 AppSettings.IncrementalExport = false;
+            }
+            if (opts.RetryOnErrors)
+            {
+                AppSettings.RetryOnErrors = true;
             }
 
             Log.Debug("Debug mode: {DebugMode}", AppSettings.Debug);
@@ -148,6 +155,10 @@ namespace alxnbl.OneNoteMdExporter
             if (!opts.NoInput && !opts.Incremental && !opts.FullExport)
                 IncrementalExportSelectionForm();
 
+            // Ask for retry on errors mode if incremental is enabled and not specified via CLI
+            if (!opts.NoInput && AppSettings.IncrementalExport && !opts.RetryOnErrors)
+                RetryOnErrorsSelectionForm();
+
             if (!opts.NoInput)
                 UpdateSettingsForm();
 
@@ -159,8 +170,45 @@ namespace alxnbl.OneNoteMdExporter
                 Log.Information(Localizer.GetString("StartExportingNotebook"), notebook.Title);
                 Log.Information("***************************************");
 
-                var result = exportService.ExportNotebook(notebook, opts.SectionName, opts.PageName);
+                int iteration = 0;
+                int previousErrorCount = int.MaxValue;
+                NotebookExportResult result;
 
+                do
+                {
+                    iteration++;
+
+                    if (iteration > 1)
+                    {
+                        Log.Information("");
+                        Log.Information("***************************************");
+                        Log.Information(Localizer.GetString("RetryIteration"), iteration, previousErrorCount);
+                        Log.Information("***************************************");
+                    }
+
+                    result = exportService.ExportNotebook(notebook, opts.SectionName, opts.PageName);
+
+                    // Check if we should continue retrying
+                    if (AppSettings.RetryOnErrors && AppSettings.IncrementalExport && result.PagesOnError > 0)
+                    {
+                        // Stop if no progress (same or more errors than previous iteration)
+                        if (result.PagesOnError >= previousErrorCount)
+                        {
+                            Log.Warning(Localizer.GetString("RetryNoProgress"), result.PagesOnError);
+                            break;
+                        }
+
+                        // Stop if max iterations reached
+                        if (AppSettings.MaxRetryIterations > 0 && iteration >= AppSettings.MaxRetryIterations)
+                        {
+                            Log.Warning(Localizer.GetString("RetryMaxIterations"), AppSettings.MaxRetryIterations, result.PagesOnError);
+                            break;
+                        }
+
+                        previousErrorCount = result.PagesOnError;
+                    }
+
+                } while (AppSettings.RetryOnErrors && AppSettings.IncrementalExport && result.PagesOnError > 0 && string.IsNullOrEmpty(result.NoteBookExportErrorMessage));
 
                 if (!string.IsNullOrEmpty(result.NoteBookExportErrorMessage))
                 {
@@ -194,6 +242,11 @@ namespace alxnbl.OneNoteMdExporter
                 }
                 else
                 {
+                    if (iteration > 1)
+                    {
+                        Log.Information("");
+                        Log.Information(Localizer.GetString("RetrySuccess"), iteration);
+                    }
                     Log.Information("");
                     Log.Information(Localizer.GetString("ExportSuccessful"), Path.GetFullPath(notebook.ExportFolder));
                     Log.Information("");
@@ -318,6 +371,38 @@ namespace alxnbl.OneNoteMdExporter
             {
                 // Invalid input, default to full export
                 AppSettings.IncrementalExport = false;
+            }
+        }
+
+        private static void RetryOnErrorsSelectionForm()
+        {
+            Log.Information(Localizer.GetString("ChooseRetryOnErrors"));
+            Log.Information(Localizer.GetString("ChooseRetryOnErrors1"));
+            Log.Information(Localizer.GetString("ChooseRetryOnErrors2"));
+
+            var input = Console.ReadLine();
+
+            Log.Information("");
+
+            // Select 1st option (no retry) by default
+            if (string.IsNullOrEmpty(input) || input == "1")
+            {
+                AppSettings.RetryOnErrors = false;
+                if (string.IsNullOrEmpty(input))
+                {
+                    Console.CursorTop -= 2;
+                    Console.WriteLine("1\n");
+                }
+            }
+            else if (input == "2")
+            {
+                AppSettings.RetryOnErrors = true;
+                Log.Debug("Retry on errors mode enabled");
+            }
+            else
+            {
+                // Invalid input, default to no retry
+                AppSettings.RetryOnErrors = false;
             }
         }
 
