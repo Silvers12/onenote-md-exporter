@@ -146,7 +146,17 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
                 if (!AppSettings.DisablePageXmlPreProcessing)
                 {
                     // Make various OneNote XML fixes before page export
-                    page.OverrideOneNoteId = PageXmlPreProcessing(xmlPageContent);
+                    try
+                    {
+                        page.OverrideOneNoteId = PageXmlPreProcessing(xmlPageContent);
+                    }
+                    catch (COMException ex) when (ex.Message.Contains("0x8004202B"))
+                    {
+                        // Page cloning failed (corrupted page, sync issue, or problematic content)
+                        // Fall back to exporting without preprocessing
+                        Log.Warning($"Page '{page.TitleWithPageLevelTabulation}': XML preprocessing failed (0x8004202B), exporting without preprocessing");
+                        page.OverrideOneNoteId = null;
+                    }
                 }
 
                 // Register page and section mappings for link conversion
