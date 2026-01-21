@@ -130,10 +130,17 @@ namespace alxnbl.OneNoteMdExporter.Services.Export
         {
             try
             {
-                OneNoteApp.Instance.GetPageContent(page.OneNoteId, out var xmlPageContentStr, PageInfo.piBinaryDataFileType);
-
-                // Alternative : return page content without binaries
-                //oneNoteApp.GetHierarchy(page.OneNoteId, HierarchyScope.hsChildren, out var xmlAttach);
+                string xmlPageContentStr;
+                try
+                {
+                    OneNoteApp.Instance.GetPageContent(page.OneNoteId, out xmlPageContentStr, PageInfo.piBinaryDataFileType);
+                }
+                catch (COMException ex) when (ex.Message.Contains("0x8004200B"))
+                {
+                    // Page content not accessible with binary data - retry without binaries
+                    Log.Debug($"Page '{page.Title}': GetPageContent failed with 0x8004200B, retrying with piAll");
+                    OneNoteApp.Instance.GetPageContent(page.OneNoteId, out xmlPageContentStr, PageInfo.piAll);
+                }
 
                 var xmlPageContent = XDocument.Parse(xmlPageContentStr).Root;
                 var ns = xmlPageContent.Name.Namespace;
