@@ -218,12 +218,6 @@ namespace alxnbl.OneNoteMdExporter
                     Console.BackgroundColor = ConsoleColor.DarkMagenta;
                     Log.Error(result.NoteBookExportErrorMessage);
                     Console.BackgroundColor = ConsoleColor.Black;
-
-                    if (!opts.NoInput)
-                    {
-                        Log.Information(Localizer.GetString("PressEnter"));
-                        Console.ReadLine();
-                    }
                 }
                 else if (result.PagesOnError > 0)
                 {
@@ -233,12 +227,6 @@ namespace alxnbl.OneNoteMdExporter
                     Log.Warning(string.Format(Localizer.GetString("ExportEndedWithErrors"), Path.GetFullPath(notebook.ExportFolder), result.PagesOnError, loggerFilename));
                     Console.BackgroundColor = ConsoleColor.Black;
                     Log.Information("");
-
-                    if (!opts.NoInput)
-                    {
-                        Log.Information(Localizer.GetString("PressEnter"));
-                        Console.ReadLine();
-                    }
                 }
                 else
                 {
